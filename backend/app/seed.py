@@ -6,18 +6,21 @@ from . import models
 
 
 def normalize_name(name: str) -> str:
-    """Normalize supplier name for matching."""
+    """Normalize supplier name for matching.
+    
+    Strips legal forms only as whole words at the end, preserves umlauts
+    (so Müller and Mueller remain distinct).
+    """
     name = name.lower()
-    # German umlauts
-    name = name.replace("ü", "ue").replace("ö", "oe").replace("ä", "ae").replace("ß", "ss")
-    # Remove legal forms
-    legal_forms = ["gmbh", "ag", "kg", "ltd", "inc", "s.r.l.", "bv", "oü", "as", "co."]
-    for form in legal_forms:
-        name = name.replace(form, "")
     # Remove punctuation
     for char in ".,&-":
         name = name.replace(char, " ")
-    return " ".join(name.split())
+    # Strip legal forms only as whole words at the end
+    legal_forms = ["gmbh", "ag", "kg", "ltd", "inc", "s.r.l.", "srl", "bv", "oü", "as", "co"]
+    words = name.split()
+    while words and words[-1] in legal_forms:
+        words.pop()
+    return " ".join(words)
 
 
 def normalize_vat(vat: str) -> str:
@@ -89,12 +92,20 @@ def seed_database():
             db.add(cost_center)
         
         # Seed suppliers
+        normalized_names = set()
         for sup_data in master_data["suppliers"]:
             vat_id = sup_data.get("vat_id")
+            name_norm = normalize_name(sup_data["name"])
+            
+            # Check uniqueness of normalized names
+            if name_norm in normalized_names:
+                print(f"⚠ WARNING: Duplicate normalized name '{name_norm}' for supplier {sup_data['id']} ({sup_data['name']})")
+            normalized_names.add(name_norm)
+            
             supplier = models.Supplier(
                 id=sup_data["id"],
                 name=sup_data["name"],
-                name_norm=normalize_name(sup_data["name"]),
+                name_norm=name_norm,
                 vat_id=vat_id,
                 vat_norm=normalize_vat(vat_id) if vat_id else None,
                 country=sup_data["country"],
@@ -105,6 +116,10 @@ def seed_database():
                 created_by_clerk=False
             )
             db.add(supplier)
+        
+        # Verify all normalized names are unique
+        if len(normalized_names) != len(master_data["suppliers"]):
+            raise ValueError(f"Normalized name collision detected: {len(master_data['suppliers'])} suppliers but only {len(normalized_names)} unique normalized names")
         
         # Seed GL accounts
         for gl_data in master_data["gl_accounts"]:

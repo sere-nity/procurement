@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 from typing import Optional
-from decimal import Decimal
 
 
 class SupplierSchema(BaseModel):
@@ -8,10 +7,8 @@ class SupplierSchema(BaseModel):
     name: str
     vat_id: Optional[str] = None
     country: str
-    default_currency: str
-    payment_terms_days: int
-    preferred: bool
-    status: str
+    currency: str
+    blocked: bool
     
     class Config:
         from_attributes = True
@@ -20,8 +17,8 @@ class SupplierSchema(BaseModel):
 class CostCenterSchema(BaseModel):
     code: str
     name: str
-    owner_employee_id: str
-    department_code: str
+    owner_id: Optional[str] = None
+    department: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -32,8 +29,7 @@ class EmployeeSchema(BaseModel):
     name: str
     email: str
     role: Optional[str] = None
-    deputy_for: Optional[str] = None
-    default_cost_center: Optional[str] = None
+    department: Optional[str] = None
     
     class Config:
         from_attributes = True

@@ -43,7 +43,7 @@ blp-requisitions/
 │   ├── app/
 │   │   ├── config.py          # Settings (DB, LLM, ERP URLs)
 │   │   ├── db.py              # SQLAlchemy setup
-│   │   ├── models.py          # Database models (40+ tables)
+│   │   ├── models.py          # Database models (7 tables)
 │   │   ├── schemas.py         # Pydantic API schemas
 │   │   ├── seed.py            # Load master_data.json into SQLite
 │   │   └── main.py            # FastAPI app + routes
